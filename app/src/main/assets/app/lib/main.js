@@ -40,7 +40,10 @@ require([
         callbacks: {
             "/": function (req, resp) {
                 logger.debug("root url called");
-                resp.sendFile(appdir + "mustache/index.html", {
+                resp.sendMustache(appdir + "mustache/index.html", {
+                    title: "Wilton Example Application",
+                    button: "Send request to server"
+                },{
                     headers: {
                         "Content-Type": "text/html"
                     }
