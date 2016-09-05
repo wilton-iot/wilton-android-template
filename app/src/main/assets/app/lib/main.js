@@ -50,7 +50,8 @@ require([
                 });
             },
             "/app/example": exampleView
-        }
-    }, successCb, errorCb);
-
+        },
+        onError: errorCb,
+        onSuccess: successCb
+    });
 });

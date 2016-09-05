@@ -30,5 +30,5 @@ dependencies {
         exclude (group: 'org.apache.httpcomponents', module: 'httpclient')
     }
     compile 'org.mozilla:rhino:1.7.7.1'
-    compile 'net.wiltonwebtoolkit:wilton.js:0.2.3'
+    compile 'net.wiltonwebtoolkit:wilton.js:0.2.5'
 }
