@@ -1,19 +1,18 @@
 
 // git clone/checkout/update logic for app JS code for development
 // credentials can be changed on-device in /sdcard/Android/data/<package>/files
-// checkout/update logic may be moved to app/index.js instead
 (function() {
-    GIT_ENABLE = false
-    GIT_URL = "git+ssh://androiddev@192.168.1.7/home/androiddev/my-wilton-app";
-    GIT_PASSWORD = "androiddev";
-    GIT_BRANCH = "master";
+    var GIT_ENABLE = true
+    var GIT_URL = "git+ssh://androiddev@192.168.1.2/home/androiddev/android-app";
+    var GIT_PASSWORD = "androiddev";
+    var GIT_BRANCH = "master";
 
     if (GIT_ENABLE) {
         // application directory
-        var appdir = new Packages.java.io.File(GLOBAL_APP.getWorkDirectory(), "app");
+        var appdir = new Packages.java.io.File(GLOBAL_ACTIVITY.getExternalFilesDir(null), "app");
 
         // JGit setup for SSH
-        var sf = new Packages.net.wiltonwebtoolkit.support.jgit.PasswordSshSessionFactory(GIT_PASSWORD)
+        var sf = new Packages.net.wiltontoolkit.support.jgit.PasswordSshSessionFactory(GIT_PASSWORD)
                 .withStrictHostKeyChecking(false);
         Packages.org.eclipse.jgit.transport.SshSessionFactory.setInstance(sf);
 
@@ -41,8 +40,16 @@
 
         // git update
         git.pull().call();
-    }
-}());
 
-// run app
-load(GLOBAL_APP.getWorkDirectory() + "/app/index.js");
+        // show revision
+        //var revision = repo.resolve(Packages.org.eclipse.jgit.lib.Constants.HEAD);
+        //GLOBAL_ACTIVITY.showMessage("git: " + revision.name());
+
+        // close repo
+        repo.close();
+    }
+
+    // init app
+    var appinitJs = new Packages.java.io.File(GLOBAL_ACTIVITY.getExternalFilesDir(null), "app/init.js");
+    GLOBAL_ACTIVITY.runJsFile(appinitJs);
+}());
