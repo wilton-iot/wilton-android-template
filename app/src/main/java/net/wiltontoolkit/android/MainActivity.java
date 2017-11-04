@@ -2,6 +2,7 @@ package net.wiltontoolkit.android;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.*;
 import android.util.Log;
@@ -21,6 +22,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
@@ -43,6 +45,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Executors.newSingleThreadExecutor(new DeepThreadFactory())
                 .execute(new Runnable() {
                     @Override
@@ -54,6 +57,22 @@ public class MainActivity extends Activity {
                         }
                     }
                 });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // hideBottomBar();
+    }
+
+    @Override
+    public void onNewIntent(Intent newIntent) {
+        this.setIntent(newIntent);
+
+        Bundle extras = getIntent().getExtras();
+        if (extras != null && extras.containsKey(this.getClass().getPackage().getName() + ".notification_icon")) {
+            showMessage("notification icon clicked");
+        }
     }
 
     @Override
