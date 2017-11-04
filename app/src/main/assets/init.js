@@ -3,7 +3,7 @@
 // credentials can be changed on-device in /sdcard/Android/data/<package>/files
 (function() {
     var GIT_ENABLE = true
-    var GIT_URL = "git+ssh://androiddev@192.168.1.2/home/androiddev/android-app";
+    var GIT_URL = "git+ssh://androiddev@192.168.43.165/home/androiddev/android-app";
     var GIT_PASSWORD = "androiddev";
     var GIT_BRANCH = "master";
 

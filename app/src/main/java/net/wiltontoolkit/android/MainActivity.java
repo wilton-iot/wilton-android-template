@@ -29,6 +29,14 @@ public class MainActivity extends Activity {
     private Context rhinoContext;
     private ScriptableObject rhinoScope;
 
+    static {
+        try {
+            Class.forName("net.wiltontoolkit.WiltonJni");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // Activity callbacks
 
     @Override
@@ -36,7 +44,16 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Executors.newSingleThreadExecutor(new DeepThreadFactory())
-                .execute(new StartAppTask());
+                .execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            startApplication();
+                        } catch (Throwable e) {
+                            logError(e);
+                        }
+                    }
+                });
     }
 
     @Override
@@ -68,15 +85,6 @@ public class MainActivity extends Activity {
 
 
     // exposed to JS
-
-
-    public void loadJniClass() {
-        try {
-            Class.forName("net.wiltontoolkit.WiltonJni");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public void runJsFile(File file) {
         InputStream is = null;
@@ -124,7 +132,9 @@ public class MainActivity extends Activity {
             AssetManager am = getAssets();
             for (String name : am.list("")) {
                 if (0 == am.list(name).length) {
-                    unpackAssetFile(dir, name);
+                    if(!("icudtl.dat".equals(name) || name.startsWith("webview") || name.endsWith("blob_32.bin"))) {
+                        unpackAssetFile(dir, name);
+                    }
                 } else if (!("images".equals(name) || "sounds".equals(name) || "webkit".equals(name))) {
                     unpackAssetsDir(dir, name);
                 }
@@ -181,17 +191,6 @@ public class MainActivity extends Activity {
         int read;
         while ((read = in.read(buffer)) != -1) {
             out.write(buffer, 0, read);
-        }
-    }
-
-    private class StartAppTask implements Runnable {
-        @Override
-        public void run() {
-            try {
-                startApplication();
-            } catch (Throwable e) {
-                logError(e);
-            }
         }
     }
 
