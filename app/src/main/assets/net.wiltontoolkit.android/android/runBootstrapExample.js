@@ -7,7 +7,7 @@ define([
     "use strict";
 
     return {
-        run: function() {
+        main: function() {
             new Channel("signal", 1);
             thread.run({
                 callbackScript: {

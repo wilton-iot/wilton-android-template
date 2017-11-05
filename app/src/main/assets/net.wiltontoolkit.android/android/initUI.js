@@ -1,8 +1,9 @@
 
 define([
+    "wilton/fs",
     "wilton/Logger",
     "wilton/misc"
-], function(Logger, misc) {
+], function(fs, Logger, misc) {
     "use strict";
 
     var mainActivity = Packages.net.wiltontoolkit.android.MainActivity.INSTANCE;
@@ -75,7 +76,7 @@ define([
     }
 
     return {
-        run: function() {
+        main: function() {
             mainActivity.runOnUiThread(new Packages.java.lang.Runnable({
                 run: function() {
                     try {
@@ -102,7 +103,10 @@ define([
                     wilton: "INFO"
                 }
             });
+        },
 
+        version: function() {
+            return fs.readFile(appdir + "wilton.version").replace(/\s+/g, "") ;
         }
     };
 });

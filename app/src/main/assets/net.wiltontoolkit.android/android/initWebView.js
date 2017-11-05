@@ -15,7 +15,7 @@ define([
     }
 
     return {
-        run: function() {
+        main: function() {
             mainActivity.runOnUiThread(new Packages.java.lang.Runnable({
                 run: function() {
                     try {

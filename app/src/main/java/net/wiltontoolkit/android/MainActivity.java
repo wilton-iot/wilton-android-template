@@ -108,6 +108,7 @@ public class MainActivity extends Activity {
         "        \"paths\": {\n" +
 //        "            \"app\": \"file://" + appdir.getAbsolutePath() +"\",\n" +
         "            \"android\": \"file://" + filesDir.getAbsolutePath() +"/android\",\n" +
+        "            \"wilton/test\": \"file://" + filesDir.getAbsolutePath() +"/wilton/test\",\n" +
         "            \"bootstrap\": \"file://" + filesDir.getAbsolutePath() +"/examples/bootstrap\"\n" +
         "        }\n" +
         "    }\n" +
@@ -138,11 +139,17 @@ public class MainActivity extends Activity {
         String GIT_URL = "git+ssh://androiddev@192.168.43.165/home/androiddev/android-app";
         String GIT_PASSWORD = "androiddev";
         String GIT_BRANCH = "master";
-        callWiltonFuncOnRhino("android/checkout", "checkout", GIT_URL, GIT_PASSWORD, GIT_BRANCH, appdir.getAbsolutePath());
+        callWiltonFuncOnRhino("android/checkout", "main", GIT_URL, GIT_PASSWORD, GIT_BRANCH, appdir.getAbsolutePath());
         */
-        callWiltonFuncOnRhino("android/initUI", "run");
-        callWiltonFuncOnRhino("android/runBootstrapExample", "run");
-        callWiltonFuncOnRhino("android/initWebView", "run");
+        callWiltonFunc("rhino", "android/initUI", "main");
+        String version = callWiltonFunc("rhino", "android/initUI", "version");
+        showMessage("Running tests, version: [" + version + "] ...");
+        callWiltonFunc("duktape", "android/runWiltonTests", "main");
+        showMessage("Tests finished successfully for engine: [duktape]");
+        callWiltonFunc("rhino", "android/runWiltonTests", "main");
+        showMessage("Tests finished successfully for engine: [rhino]");
+        callWiltonFunc("rhino", "android/runBootstrapExample", "main");
+        callWiltonFunc("rhino", "android/initWebView", "main");
     }
 
 
@@ -182,7 +189,7 @@ public class MainActivity extends Activity {
         "}");
     }
 
-    private void callWiltonFuncOnRhino(String module, String func, String... args) {
+    private String callWiltonFunc(String engine, String module, String func, String... args) {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (int i = 0; i < args.length; i++) {
@@ -194,7 +201,7 @@ public class MainActivity extends Activity {
             sb.append("\"");
         }
         sb.append("]");
-        WiltonJni.wiltoncall("runscript_rhino", "{\n" +
+        return WiltonJni.wiltoncall("runscript_" + engine, "{\n" +
         "    \"module\": \"" + module + "\",\n" +
         "    \"func\": \"" + func + "\",\n" +
         "    \"args\": " + sb.toString() + "\n" +

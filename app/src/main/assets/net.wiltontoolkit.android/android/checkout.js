@@ -2,7 +2,7 @@
 define([], function() {
 
     return {
-        checkout: function(url, passwd, branch, appdirPath) {
+        main: function(url, passwd, branch, appdirPath) {
             // JGit setup for SSH
             var sf = new Packages.net.wiltontoolkit.support.jgit.PasswordSshSessionFactory(passwd)
                     .withStrictHostKeyChecking(false);
