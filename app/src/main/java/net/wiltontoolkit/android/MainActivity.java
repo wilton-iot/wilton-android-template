@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
@@ -94,19 +93,22 @@ public class MainActivity extends Activity {
         unpackAssets(filesDir, getClass().getPackage().getName());
 
         // init wilton
-        File appdir = new File(filesDir, "app");
+        //File appdir = new File(filesDir, "app");
         String conf = "{\n" +
         "    \"defaultScriptEngine\": \"duktape\",\n" +
-        "    \"applicationDirectory\": \"" + appdir.getAbsolutePath() + "/\",\n" +
-        "    \"environmentVariables\": {},\n" +
+        "    \"applicationDirectory\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
+        "    \"environmentVariables\": {\n" + 
+        "         \"ANDROID\": true\n" +
+        "    },\n" +
         "    \"requireJs\": {\n" +
         "        \"waitSeconds\": 0,\n" +
         "        \"enforceDefine\": true,\n" +
         "        \"nodeIdCompat\": true,\n" +
         "        \"baseUrl\": \"zip://" + filesDir.getAbsolutePath() + "/std.wlib\",\n" +
         "        \"paths\": {\n" +
-        "            \"app\": \"file://" + appdir.getAbsolutePath() +"\",\n" +
-        "            \"init\": \"file://" + filesDir.getAbsolutePath() +"/init\"\n" +
+//        "            \"app\": \"file://" + appdir.getAbsolutePath() +"\",\n" +
+        "            \"android\": \"file://" + filesDir.getAbsolutePath() +"/android\",\n" +
+        "            \"bootstrap\": \"file://" + filesDir.getAbsolutePath() +"/examples/bootstrap\"\n" +
         "        }\n" +
         "    }\n" +
         "}\n";
@@ -132,13 +134,15 @@ public class MainActivity extends Activity {
         String codeReq = WiltonJni.wiltoncall("load_module_script", prefix + "wilton-requirejs/wilton-require.js");
         WiltonRhinoEnvironment.initialize(codeJni + codeReq);
 
-        // temp
+        /*
         String GIT_URL = "git+ssh://androiddev@192.168.43.165/home/androiddev/android-app";
         String GIT_PASSWORD = "androiddev";
         String GIT_BRANCH = "master";
-
-        callWiltonFuncOnRhino("init/checkout", "checkout", GIT_URL, GIT_PASSWORD, GIT_BRANCH, appdir.getAbsolutePath());
-        callWiltonFuncOnRhino("app/init", "init");
+        callWiltonFuncOnRhino("android/checkout", "checkout", GIT_URL, GIT_PASSWORD, GIT_BRANCH, appdir.getAbsolutePath());
+        */
+        callWiltonFuncOnRhino("android/initUI", "run");
+        callWiltonFuncOnRhino("android/runBootstrapExample", "run");
+        callWiltonFuncOnRhino("android/initWebView", "run");
     }
 
 
