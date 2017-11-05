@@ -6,4 +6,6 @@
 /build
 /app/build
 /captures
-/app/src/main/assets/std.wlib
+/app/src/main/assets/net.wiltontoolkit.android/std.wlib
+/app/src/main/assets/net.wiltontoolkit.android/examples
+/app/src/main/assets/net.wiltontoolkit.android/wilton

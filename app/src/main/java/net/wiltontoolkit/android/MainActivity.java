@@ -8,6 +8,7 @@ import android.os.*;
 import android.util.Log;
 import android.webkit.WebView;
 
+import net.wiltontoolkit.WiltonJni;
 import net.wiltontoolkit.support.rhino.WiltonRhinoEnvironment;
 
 import org.mozilla.javascript.Context;
@@ -31,18 +32,16 @@ public class MainActivity extends Activity {
     private Context rhinoContext;
     private ScriptableObject rhinoScope;
 
-    static {
-        try {
-            Class.forName("net.wiltontoolkit.WiltonJni");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    // launchMode="singleInstance" is used
+    public static MainActivity INSTANCE = null;
 
     // Activity callbacks
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (null == INSTANCE) {
+            INSTANCE = this;
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -68,11 +67,12 @@ public class MainActivity extends Activity {
     @Override
     public void onNewIntent(Intent newIntent) {
         this.setIntent(newIntent);
-
+        /*
         Bundle extras = getIntent().getExtras();
         if (extras != null && extras.containsKey(this.getClass().getPackage().getName() + ".notification_icon")) {
             showMessage("notification icon clicked");
         }
+        */
     }
 
     @Override
@@ -90,16 +90,55 @@ public class MainActivity extends Activity {
 
     private void startApplication() {
         // assets
-        unpackAssets();
+        File filesDir = getExternalFilesDir(null);
+        unpackAssets(filesDir, getClass().getPackage().getName());
 
-        // run app
-        WiltonRhinoEnvironment.initialize("");
-        rhinoContext = Context.enter();
-        rhinoScope = rhinoContext.initStandardObjects();
-        ScriptableObject.putProperty(rhinoScope, "GLOBAL_ACTIVITY", Context.javaToJS(MainActivity.this, rhinoScope));
-        File initJs = new File(getExternalFilesDir(null), "init.js");
-        runJsFile(initJs);
-        Context.exit();
+        // init wilton
+        File appdir = new File(filesDir, "app");
+        String conf = "{\n" +
+        "    \"defaultScriptEngine\": \"duktape\",\n" +
+        "    \"applicationDirectory\": \"" + appdir.getAbsolutePath() + "/\",\n" +
+        "    \"environmentVariables\": {},\n" +
+        "    \"requireJs\": {\n" +
+        "        \"waitSeconds\": 0,\n" +
+        "        \"enforceDefine\": true,\n" +
+        "        \"nodeIdCompat\": true,\n" +
+        "        \"baseUrl\": \"zip://" + filesDir.getAbsolutePath() + "/std.wlib\",\n" +
+        "        \"paths\": {\n" +
+        "            \"app\": \"file://" + appdir.getAbsolutePath() +"\",\n" +
+        "            \"init\": \"file://" + filesDir.getAbsolutePath() +"/init\"\n" +
+        "        }\n" +
+        "    }\n" +
+        "}\n";
+        WiltonJni.wiltoninit(WiltonRhinoEnvironment.gateway(), conf);
+
+        // modules
+        File libDir = new File(getFilesDir().getParentFile(), "lib");
+        dyloadWiltonModule(libDir, "wilton_logging");
+        dyloadWiltonModule(libDir, "wilton_loader");
+        dyloadWiltonModule(libDir, "wilton_duktape");
+        dyloadWiltonModule(libDir, "wilton_channel");
+        dyloadWiltonModule(libDir, "wilton_cron");
+        dyloadWiltonModule(libDir, "wilton_db");
+        dyloadWiltonModule(libDir, "wilton_fs");
+        dyloadWiltonModule(libDir, "wilton_http");
+        dyloadWiltonModule(libDir, "wilton_net");
+        dyloadWiltonModule(libDir, "wilton_pdf");
+        dyloadWiltonModule(libDir, "wilton_thread");
+
+        // rhino
+        String prefix = "zip://" + filesDir.getAbsolutePath() + "/std.wlib/";
+        String codeJni = WiltonJni.wiltoncall("load_module_script", prefix + "wilton-requirejs/wilton-jni.js");
+        String codeReq = WiltonJni.wiltoncall("load_module_script", prefix + "wilton-requirejs/wilton-require.js");
+        WiltonRhinoEnvironment.initialize(codeJni + codeReq);
+
+        // temp
+        String GIT_URL = "git+ssh://androiddev@192.168.43.165/home/androiddev/android-app";
+        String GIT_PASSWORD = "androiddev";
+        String GIT_BRANCH = "master";
+
+        callWiltonFuncOnRhino("init/checkout", "checkout", GIT_URL, GIT_PASSWORD, GIT_BRANCH, appdir.getAbsolutePath());
+        callWiltonFuncOnRhino("app/init", "init");
     }
 
 
@@ -132,6 +171,32 @@ public class MainActivity extends Activity {
 
     // helper methods
 
+    private void dyloadWiltonModule(File directory, String name) {
+        WiltonJni.wiltoncall("dyload_shared_library", "{\n" +
+        "    \"name\": \"" + name + "\",\n" +
+        "    \"directory\": \"" + directory.getAbsolutePath() + "\"\n" +
+        "}");
+    }
+
+    private void callWiltonFuncOnRhino(String module, String func, String... args) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < args.length; i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append("\"");
+            sb.append(args[i]);
+            sb.append("\"");
+        }
+        sb.append("]");
+        WiltonJni.wiltoncall("runscript_rhino", "{\n" +
+        "    \"module\": \"" + module + "\",\n" +
+        "    \"func\": \"" + func + "\",\n" +
+        "    \"args\": " + sb.toString() + "\n" +
+        "}");
+    }
+
     private void logError(Throwable e) {
         try {
             final String msg = Log.getStackTraceString(e);
@@ -144,43 +209,37 @@ public class MainActivity extends Activity {
         }
     }
 
-    // existing assets won't be overridden, use app uninstall+install for that
-    private void unpackAssets() {
+    private void unpackAssets(File topLevelDir, String path) {
         try {
-            File dir = getExternalFilesDir(null);
-            AssetManager am = getAssets();
-            for (String name : am.list("")) {
-                if (0 == am.list(name).length) {
-                    if(!("icudtl.dat".equals(name) || name.startsWith("webview") || name.endsWith("blob_32.bin"))) {
-                        unpackAssetFile(dir, name);
-                    }
-                } else if (!("images".equals(name) || "sounds".equals(name) || "webkit".equals(name))) {
-                    unpackAssetsDir(dir, name);
-                }
-            }
-        } catch (Exception e) {
+            unpackAssetsDir(topLevelDir, path, path);
+        } catch(IOException e) {
             logError(e);
         }
     }
 
-    private void unpackAssetsDir(File topLevelDir, String relPath) throws IOException {
-        File destDir = new File(topLevelDir, relPath);
-        if (destDir.exists()) return;
-        boolean created = destDir.mkdir();
-        if (!created) throw new IOException("Cannot create dir: [" + destDir.getAbsolutePath() + "]");
+    private void unpackAssetsDir(File topLevelDir, String relPath, String stripPrefix) throws IOException {
+        String subRelPath = relPath.substring(stripPrefix.length());
+        File destDir = new File(topLevelDir, subRelPath);
+        if (!destDir.exists()) {
+            boolean created = destDir.mkdir();
+            if (!created) {
+                throw new IOException("Cannot create dir: [" + destDir.getAbsolutePath() + "]");
+            }
+        }
         AssetManager am = getAssets();
         for (String name : am.list(relPath)) {
             String childPath = relPath + "/" + name;
             if (0 == am.list(childPath).length) {
-                unpackAssetFile(topLevelDir, childPath);
+                unpackAssetFile(topLevelDir, childPath, stripPrefix);
             } else {
-                unpackAssetsDir(topLevelDir, childPath);
+                unpackAssetsDir(topLevelDir, childPath, stripPrefix);
             }
         }
     }
 
-    private void unpackAssetFile(File topLevelDir, String relPath) throws IOException {
-        File destFile = new File(topLevelDir, relPath);
+    private void unpackAssetFile(File topLevelDir, String relPath, String stripPrefix) throws IOException {
+        String subRelPath = relPath.substring(stripPrefix.length());
+        File destFile = new File(topLevelDir, subRelPath);
         if (destFile.exists()) return;
         InputStream is = null;
         OutputStream os = null;
