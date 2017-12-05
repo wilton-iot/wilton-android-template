@@ -117,6 +117,8 @@ public class MainActivity extends Activity {
 
         // modules
         File libDir = new File(getFilesDir().getParentFile(), "lib");
+        dyloadWiltonModule(libDir, "wilton_crypto");
+        dyloadWiltonModule(libDir, "wilton_zip");
         dyloadWiltonModule(libDir, "wilton_logging");
         dyloadWiltonModule(libDir, "wilton_loader");
         dyloadWiltonModule(libDir, "wilton_duktape");
@@ -127,6 +129,7 @@ public class MainActivity extends Activity {
         dyloadWiltonModule(libDir, "wilton_http");
         dyloadWiltonModule(libDir, "wilton_net");
         dyloadWiltonModule(libDir, "wilton_pdf");
+        dyloadWiltonModule(libDir, "wilton_server");
         dyloadWiltonModule(libDir, "wilton_thread");
 
         // rhino
