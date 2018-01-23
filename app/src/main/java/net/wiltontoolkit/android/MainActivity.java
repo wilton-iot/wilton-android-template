@@ -7,8 +7,10 @@ import android.content.res.AssetManager;
 import android.os.*;
 import android.util.Log;
 import android.webkit.WebView;
+import java.io.ByteArrayOutputStream;
 
 import net.wiltontoolkit.WiltonJni;
+import net.wiltontoolkit.WiltonException;
 import net.wiltontoolkit.support.rhino.WiltonRhinoEnvironment;
 
 import org.mozilla.javascript.Context;
@@ -25,6 +27,10 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.nio.charset.Charset;
+import java.util.Enumeration;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipEntry;
 
 public class MainActivity extends Activity {
 
@@ -93,7 +99,6 @@ public class MainActivity extends Activity {
         unpackAssets(filesDir, getClass().getPackage().getName());
 
         // init wilton
-        //File appdir = new File(filesDir, "app");
         String conf = "{\n" +
         "    \"defaultScriptEngine\": \"duktape\",\n" +
         "    \"applicationDirectory\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
@@ -110,8 +115,9 @@ public class MainActivity extends Activity {
         "            \"android\": \"file://" + filesDir.getAbsolutePath() +"/android\",\n" +
         "            \"wilton/test\": \"file://" + filesDir.getAbsolutePath() +"/wilton/test\",\n" +
         "            \"bootstrap\": \"file://" + filesDir.getAbsolutePath() +"/examples/bootstrap\"\n" +
-        "        }\n" +
-        "    }\n" +
+        "        },\n" +
+        "        \"packages\": " + loadPackagesList(new File(filesDir, "std.wlib")) +
+        "    \n}\n" +
         "}\n";
         WiltonJni.wiltoninit(WiltonRhinoEnvironment.gateway(), conf);
 
@@ -134,8 +140,8 @@ public class MainActivity extends Activity {
 
         // rhino
         String prefix = "zip://" + filesDir.getAbsolutePath() + "/std.wlib/";
-        String codeJni = WiltonJni.wiltoncall("load_module_script", prefix + "wilton-requirejs/wilton-jni.js");
-        String codeReq = WiltonJni.wiltoncall("load_module_script", prefix + "wilton-requirejs/wilton-require.js");
+        String codeJni = WiltonJni.wiltoncall("load_module_resource", prefix + "wilton-requirejs/wilton-jni.js");
+        String codeReq = WiltonJni.wiltoncall("load_module_resource", prefix + "wilton-requirejs/wilton-require.js");
         WiltonRhinoEnvironment.initialize(codeJni + codeReq);
 
         /*
@@ -210,6 +216,35 @@ public class MainActivity extends Activity {
         "    \"args\": " + sb.toString() + "\n" +
         "}");
     }
+
+    private String loadPackagesList(File stdWlib) {
+        ZipFile zipFile = null;
+        try {
+            zipFile = new ZipFile(stdWlib);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry en = entries.nextElement();
+            if ("wilton-requirejs/wilton-packages.json".equals(en.getName())) {
+                InputStream is = null;
+                try {
+                    is = zipFile.getInputStream(en);
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    copy(is, os);
+                    return new String(os.toByteArray(), Charset.forName("UTF-8"));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    closeQuietly(is);
+                }
+            }
+        }
+        throw new WiltonException("Cannot load 'wilton-requirejs/wilton-packages.json' entry,"
+                + " ZIP path: [" + stdWlib.getAbsolutePath() + "]");
+    }
+
 
     private void logError(Throwable e) {
         try {
