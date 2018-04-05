@@ -149,6 +149,7 @@ public class MainActivity extends Activity {
         dyloadWiltonModule(libDir, "wilton_db");
         dyloadWiltonModule(libDir, "wilton_fs");
         dyloadWiltonModule(libDir, "wilton_http");
+        dyloadWiltonModule(libDir, "wilton_mustache");
         dyloadWiltonModule(libDir, "wilton_net");
         dyloadWiltonModule(libDir, "wilton_pdf");
         dyloadWiltonModule(libDir, "wilton_server");
