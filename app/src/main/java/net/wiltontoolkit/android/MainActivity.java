@@ -135,7 +135,7 @@ public class MainActivity extends Activity {
         "        \"packages\": " + loadPackagesList(new File(filesDir, "std.wlib")) +
         "    \n}\n" +
         "}\n";
-        WiltonJni.wiltoninit(WiltonRhinoEnvironment.gateway(), conf);
+        WiltonJni.initialize(conf);
 
         // modules
         File libDir = new File(getFilesDir().getParentFile(), "lib");
@@ -160,6 +160,7 @@ public class MainActivity extends Activity {
         String codeJni = WiltonJni.wiltoncall("load_module_resource", prefix + "wilton-requirejs/wilton-jni.js");
         String codeReq = WiltonJni.wiltoncall("load_module_resource", prefix + "wilton-requirejs/wilton-require.js");
         WiltonRhinoEnvironment.initialize(codeJni + codeReq);
+        WiltonJni.registerScriptGateway(WiltonRhinoEnvironment.gateway(), "rhino");
 
         /*
         String GIT_URL = "git+ssh://androiddev@192.168.43.165/home/androiddev/android-app";
