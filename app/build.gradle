@@ -20,7 +20,7 @@ android {
     compileSdkVersion 26
 
     defaultConfig {
-        applicationId "net.wiltontoolkit.android"
+        applicationId "wilton.android"
         minSdkVersion 15
         targetSdkVersion 26
         versionCode 1

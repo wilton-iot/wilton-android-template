@@ -19,7 +19,7 @@ define([], function() {
     return {
         main: function(url, passwd, branch, appdirPath) {
             // JGit setup for SSH
-            var sf = new Packages.net.wiltontoolkit.support.jgit.PasswordSshSessionFactory(passwd)
+            var sf = new Packages.wilton.support.jgit.PasswordSshSessionFactory(passwd)
                     .withStrictHostKeyChecking(false);
             Packages.org.eclipse.jgit.transport.SshSessionFactory.setInstance(sf);
 

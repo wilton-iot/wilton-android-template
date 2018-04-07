@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.wiltontoolkit.android;
+package wilton.android;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

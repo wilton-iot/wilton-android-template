@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.wiltontoolkit.android;
+package wilton.android;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -25,9 +25,9 @@ import android.util.Log;
 import android.webkit.WebView;
 import java.io.ByteArrayOutputStream;
 
-import net.wiltontoolkit.WiltonJni;
-import net.wiltontoolkit.WiltonException;
-import net.wiltontoolkit.support.rhino.WiltonRhinoEnvironment;
+import wilton.WiltonJni;
+import wilton.WiltonException;
+import wilton.support.rhino.WiltonRhinoEnvironment;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ScriptableObject;

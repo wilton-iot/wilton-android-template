@@ -18,11 +18,11 @@ define([
 ], function() {
     "use strict";
 
-    var mainActivity = Packages.net.wiltontoolkit.android.MainActivity.INSTANCE;
+    var mainActivity = Packages.wilton.android.MainActivity.INSTANCE;
 
     function initWebView() {
         // init webview
-        var webView = mainActivity.findViewById(Packages.net.wiltontoolkit.android.R.id.activity_main_webview);
+        var webView = mainActivity.findViewById(Packages.wilton.android.R.id.activity_main_webview);
         // Force links and redirects to open in the WebView instead of in a browser
         webView.setWebViewClient(new Packages.android.webkit.WebViewClient());
         webView.getSettings().setJavaScriptEnabled(true);

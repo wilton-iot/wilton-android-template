@@ -21,11 +21,11 @@ define([
 ], function(fs, Logger, misc) {
     "use strict";
 
-    var mainActivity = Packages.net.wiltontoolkit.android.MainActivity.INSTANCE;
+    var mainActivity = Packages.wilton.android.MainActivity.INSTANCE;
     var appdir = misc.wiltonConfig().applicationDirectory;
 
     function initCloseButton() {
-        var button = mainActivity.findViewById(Packages.net.wiltontoolkit.android.R.id.close_button);
+        var button = mainActivity.findViewById(Packages.wilton.android.R.id.close_button);
         button.setOnClickListener(new Packages.android.view.View.OnClickListener({
             onClick: function() {
                 var nm = mainActivity.getSystemService(Packages.android.content.Context.NOTIFICATION_SERVICE);
@@ -81,7 +81,7 @@ define([
                 .setTicker("Wilton")
                 .setContentTitle("Wilton")
                 .setContentText("Wilton Control Panel")
-                .setSmallIcon(Packages.net.wiltontoolkit.android.R.drawable.ic_wilton)
+                .setSmallIcon(Packages.wilton.android.R.drawable.ic_wilton)
                 .setContentIntent(pi)
                 .setOngoing(true)
                 .setNumber(1)
