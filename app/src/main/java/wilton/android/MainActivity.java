@@ -130,7 +130,8 @@ public class MainActivity extends Activity {
 //        "            \"app\": \"file://" + appdir.getAbsolutePath() +"\",\n" +
         "            \"android\": \"file://" + filesDir.getAbsolutePath() +"/android\",\n" +
         "            \"wilton/test\": \"file://" + filesDir.getAbsolutePath() +"/wilton/test\",\n" +
-        "            \"bootstrap\": \"file://" + filesDir.getAbsolutePath() +"/examples/bootstrap\"\n" +
+        "            \"bootstrap\": \"file://" + filesDir.getAbsolutePath() +"/examples/bootstrap\",\n" +
+        "            \"vue\": \"file://" + filesDir.getAbsolutePath() +"/examples/vue\"\n" +
         "        },\n" +
         "        \"packages\": " + loadPackagesList(new File(filesDir, "std.wlib")) +
         "    \n}\n" +
@@ -175,7 +176,8 @@ public class MainActivity extends Activity {
         showMessage("Tests finished successfully for engine: [duktape]");
         callWiltonFunc("rhino", "android/runWiltonTests", "main");
         showMessage("Tests finished successfully for engine: [rhino]");
-        callWiltonFunc("rhino", "android/runBootstrapExample", "main");
+//        callWiltonFunc("rhino", "android/runBootstrapExample", "main");
+        callWiltonFunc("rhino", "android/runVueExample", "main");
         callWiltonFunc("rhino", "android/initWebView", "main");
     }
 
