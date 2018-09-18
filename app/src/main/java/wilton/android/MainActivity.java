@@ -134,7 +134,8 @@ public class MainActivity extends Activity {
         "            \"vue\": \"file://" + filesDir.getAbsolutePath() +"/examples/vue\"\n" +
         "        },\n" +
         "        \"packages\": " + loadPackagesList(new File(filesDir, "std.wlib")) +
-        "    \n}\n" +
+        "    \n},\n" +
+        "    \"compileTimeOS\": \"android\"\n" +
         "}\n";
         WiltonJni.initialize(conf);
 
