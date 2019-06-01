@@ -50,9 +50,6 @@ import java.util.zip.ZipEntry;
 
 public class MainActivity extends Activity {
 
-    private Context rhinoContext;
-    private ScriptableObject rhinoScope;
-
     // launchMode="singleInstance" is used
     public static MainActivity INSTANCE = null;
 
@@ -114,11 +111,16 @@ public class MainActivity extends Activity {
         File filesDir = getExternalFilesDir(null);
         unpackAssets(filesDir, getClass().getPackage().getName());
 
+        File libDir = new File(getFilesDir().getParentFile(), "lib");
         // init wilton
         String conf = "{\n" +
+//                todo: fix process call in launcher
         "    \"defaultScriptEngine\": \"rhino\",\n" +
         "    \"applicationDirectory\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
         "    \"wiltonHome\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
+        "    \"android\": {\n" + 
+        "         \"nativeLibsDir\": \"" + libDir.getAbsolutePath() + "\"\n" +
+        "    },\n" +
         "    \"environmentVariables\": {\n" + 
         "         \"ANDROID\": true\n" +
         "    },\n" +
@@ -138,23 +140,9 @@ public class MainActivity extends Activity {
         WiltonJni.initialize(conf);
 
         // modules
-        File libDir = new File(getFilesDir().getParentFile(), "lib");
-        dyloadWiltonModule(libDir, "wilton_crypto");
-        dyloadWiltonModule(libDir, "wilton_zip");
         dyloadWiltonModule(libDir, "wilton_logging");
         dyloadWiltonModule(libDir, "wilton_loader");
         dyloadWiltonModule(libDir, "wilton_duktape");
-        dyloadWiltonModule(libDir, "wilton_channel");
-        dyloadWiltonModule(libDir, "wilton_cron");
-        dyloadWiltonModule(libDir, "wilton_db");
-        dyloadWiltonModule(libDir, "wilton_fs");
-        dyloadWiltonModule(libDir, "wilton_git");
-        dyloadWiltonModule(libDir, "wilton_http");
-        dyloadWiltonModule(libDir, "wilton_mustache");
-        dyloadWiltonModule(libDir, "wilton_net");
-        dyloadWiltonModule(libDir, "wilton_pdf");
-        dyloadWiltonModule(libDir, "wilton_server");
-        dyloadWiltonModule(libDir, "wilton_thread");
 
         // rhino
         String prefix = "zip://" + filesDir.getAbsolutePath() + "/std.wlib/";
@@ -163,40 +151,14 @@ public class MainActivity extends Activity {
         WiltonRhinoEnvironment.initialize(codeJni + codeReq);
         WiltonJni.registerScriptGateway(WiltonRhinoEnvironment.gateway(), "rhino");
 
-        /*
-        String GIT_URL = "git+ssh://androiddev@192.168.43.165/home/androiddev/android-app";
-        String GIT_PASSWORD = "androiddev";
-        String GIT_BRANCH = "master";
-        callWiltonFuncOnRhino("android/checkout", "main", GIT_URL, GIT_PASSWORD, GIT_BRANCH, appdir.getAbsolutePath());
-        */
-        callWiltonFunc("rhino", "android/initUI", "main");
-//        String version = callWiltonFunc("rhino", "android/initUI", "version");
-//        showMessage("Running tests, version: [" + version + "] ...");
-//        callWiltonFunc("duktape", "android/runWiltonTests", "main");
-//        showMessage("Tests finished successfully for engine: [duktape]");
-//        callWiltonFunc("rhino", "android/runWiltonTests", "main");
-//        showMessage("Tests finished successfully for engine: [rhino]");
-//        callWiltonFunc("rhino", "android/runBootstrapExample", "main");
-        callWiltonFunc("rhino", "android/signalChannel", "main");
-        callWiltonFunc("rhino", "launcher/index", "main");
+//        callWiltonFunc("rhino", "android/initUI", "main");
+        callWiltonFunc("duktape", "android/signalChannel", "main");
+        callWiltonFunc("duktape", "launcher/index", "main");
         callWiltonFunc("rhino", "android/initWebView", "main");
     }
 
 
     // exposed to JS
-
-    public void runJsFile(File file) {
-        InputStream is = null;
-        try {
-            is = new FileInputStream(file);
-            Reader reader = new InputStreamReader(is, "UTF-8");
-            rhinoContext.evaluateReader(rhinoScope, reader, file.getAbsolutePath(), 1, null);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            closeQuietly(is);
-        }
-    }
 
     public void showMessage(final String message) {
         runOnUiThread(new Runnable() {
@@ -208,7 +170,6 @@ public class MainActivity extends Activity {
             }
         });
     }
-
 
     // helper methods
 

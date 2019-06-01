@@ -107,18 +107,6 @@ define([
                     }
                 }
             }));
-
-            Logger.initialize({
-                appenders: [{
-                    appenderType: "DAILY_ROLLING_FILE",
-                    thresholdLevel: "DEBUG",
-                    filePath: appdir + "log.txt"
-                }],
-                loggers: {
-                    staticlib: "INFO",
-                    wilton: "INFO"
-                }
-            });
         },
 
         version: function() {

@@ -25,14 +25,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- todo: removeme -->
-    <Button
+    <!-- Button
         android:id="@+id/close_button"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:text="  X  "
         android:textColor="@android:color/holo_red_dark"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"/-->
 
 </RelativeLayout>
