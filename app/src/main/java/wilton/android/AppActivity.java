@@ -48,13 +48,13 @@ import java.util.Enumeration;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 
-public class MainActivity extends Activity {
+public class AppActivity extends Activity {
 
     private Context rhinoContext;
     private ScriptableObject rhinoScope;
 
     // launchMode="singleInstance" is used
-    public static MainActivity INSTANCE = null;
+    public static AppActivity INSTANCE = null;
 
     // Activity callbacks
 
@@ -64,7 +64,7 @@ public class MainActivity extends Activity {
             INSTANCE = this;
         }
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+//        setContentView(R.layout.activity_main);
 
         Executors.newSingleThreadExecutor(new DeepThreadFactory())
                 .execute(new Runnable() {
@@ -78,34 +78,6 @@ public class MainActivity extends Activity {
                     }
                 });
     }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // hideBottomBar();
-    }
-
-    @Override
-    public void onNewIntent(Intent newIntent) {
-        this.setIntent(newIntent);
-        /*
-        Bundle extras = getIntent().getExtras();
-        if (extras != null && extras.containsKey(this.getClass().getPackage().getName() + ".notification_icon")) {
-            showMessage("notification icon clicked");
-        }
-        */
-    }
-
-    @Override
-    public void onBackPressed() {
-        WebView wv = findViewById(R.id.activity_main_webview);
-        if (wv.canGoBack()) {
-            wv.goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
 
     // Application startup logic, runs on rhino-thread
 
@@ -128,8 +100,9 @@ public class MainActivity extends Activity {
         "        \"nodeIdCompat\": true,\n" +
         "        \"baseUrl\": \"zip://" + filesDir.getAbsolutePath() + "/std.wlib\",\n" +
         "        \"paths\": {\n" +
+//        "            \"app\": \"file://" + appdir.getAbsolutePath() +"\",\n" +
         "            \"android\": \"file://" + filesDir.getAbsolutePath() +"/android\",\n" +
-        "            \"launcher\": \"file://" + filesDir.getAbsolutePath() +"/examples/launcher\"\n" +
+        "            \"vueapp\": \"file://" + filesDir.getAbsolutePath() +"/examples/launcher/work/app\"\n" +
         "        },\n" +
         "        \"packages\": " + loadPackagesList(new File(filesDir, "std.wlib")) +
         "    \n},\n" +
@@ -169,17 +142,10 @@ public class MainActivity extends Activity {
         String GIT_BRANCH = "master";
         callWiltonFuncOnRhino("android/checkout", "main", GIT_URL, GIT_PASSWORD, GIT_BRANCH, appdir.getAbsolutePath());
         */
-        callWiltonFunc("rhino", "android/initUI", "main");
-//        String version = callWiltonFunc("rhino", "android/initUI", "version");
-//        showMessage("Running tests, version: [" + version + "] ...");
-//        callWiltonFunc("duktape", "android/runWiltonTests", "main");
-//        showMessage("Tests finished successfully for engine: [duktape]");
-//        callWiltonFunc("rhino", "android/runWiltonTests", "main");
-//        showMessage("Tests finished successfully for engine: [rhino]");
-//        callWiltonFunc("rhino", "android/runBootstrapExample", "main");
+//        callWiltonFunc("rhino", "android/initUI", "main");
         callWiltonFunc("rhino", "android/signalChannel", "main");
-        callWiltonFunc("rhino", "launcher/index", "main");
-        callWiltonFunc("rhino", "android/initWebView", "main");
+        callWiltonFunc("rhino", "vueapp/index", "main");
+//        callWiltonFunc("rhino", "android/initWebView", "main");
     }
 
 
@@ -202,7 +168,7 @@ public class MainActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                new AlertDialog.Builder(MainActivity.this)
+                new AlertDialog.Builder(AppActivity.this)
                         .setMessage(message)
                         .show();
             }

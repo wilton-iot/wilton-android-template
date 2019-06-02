@@ -37,6 +37,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".AppActivity"
+            android:launchMode="singleInstance"
+            android:process="wilton.android.AppActivity"
+            android:theme="@android:style/Theme.NoDisplay">
+        </activity>
         <receiver
             android:enabled="true"
             android:name=".BootReceiver">

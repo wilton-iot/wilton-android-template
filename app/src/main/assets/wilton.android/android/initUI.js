@@ -15,10 +15,11 @@
  */
 
 define([
+    "wilton/Channel",
     "wilton/fs",
     "wilton/Logger",
     "wilton/misc"
-], function(fs, Logger, misc) {
+], function(Channel, fs, Logger, misc) {
     "use strict";
 
     var mainActivity = Packages.wilton.android.MainActivity.INSTANCE;

@@ -26,7 +26,7 @@ define([
         // Force links and redirects to open in the WebView instead of in a browser
         webView.setWebViewClient(new Packages.android.webkit.WebViewClient());
         webView.getSettings().setJavaScriptEnabled(true);
-        webView.loadUrl("http://127.0.0.1:8080/");
+        webView.loadUrl("http://127.0.0.1:26100/");
     }
 
     return {
