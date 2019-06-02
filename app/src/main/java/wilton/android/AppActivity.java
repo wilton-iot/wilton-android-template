@@ -18,31 +18,19 @@ package wilton.android;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Intent;
-import android.content.res.AssetManager;
 import android.os.*;
 import android.util.Log;
-import android.webkit.WebView;
 import java.io.ByteArrayOutputStream;
 
 import wilton.WiltonJni;
 import wilton.WiltonException;
-import wilton.support.rhino.WiltonRhinoEnvironment;
-
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ScriptableObject;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.zip.ZipFile;
@@ -50,18 +38,11 @@ import java.util.zip.ZipEntry;
 
 public class AppActivity extends Activity {
 
-    // launchMode="singleInstance" is used
-    public static AppActivity INSTANCE = null;
-
     // Activity callbacks
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        if (null == INSTANCE) {
-            INSTANCE = this;
-        }
         super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_main);
 
         Executors.newSingleThreadExecutor()
                 .execute(new Runnable() {
@@ -79,10 +60,7 @@ public class AppActivity extends Activity {
     // Application startup logic, runs on rhino-thread
 
     private void startApplication() {
-        // assets
         File filesDir = getExternalFilesDir(null);
-        unpackAssets(filesDir, getClass().getPackage().getName());
-
         File libDir = new File(getFilesDir().getParentFile(), "lib");
         // init wilton
         String conf = "{\n" +
@@ -101,9 +79,7 @@ public class AppActivity extends Activity {
         "        \"nodeIdCompat\": true,\n" +
         "        \"baseUrl\": \"zip://" + filesDir.getAbsolutePath() + "/std.wlib\",\n" +
         "        \"paths\": {\n" +
-//        "            \"app\": \"file://" + appdir.getAbsolutePath() +"\",\n" +
-        "            \"android\": \"file://" + filesDir.getAbsolutePath() +"/android\",\n" +
-        "            \"vueapp\": \"file://" + filesDir.getAbsolutePath() +"/examples/launcher/work/app\"\n" +
+        "            \"vueapp\": \"file://" + filesDir.getAbsolutePath() +"/app\"\n" +
         "        },\n" +
         "        \"packages\": " + loadPackagesList(new File(filesDir, "std.wlib")) +
         "    \n},\n" +
@@ -116,8 +92,7 @@ public class AppActivity extends Activity {
         dyloadWiltonModule(libDir, "wilton_loader");
         dyloadWiltonModule(libDir, "wilton_duktape");
 
-        callWiltonFunc("duktape", "android/signalChannel", "main");
-        callWiltonFunc("duktape", "vueapp/index", "main");
+        WiltonJni.wiltoncall("runscript_duktape", "{\"module\": \"wilton/android/initApp\"}");
     }
 
     // helper methods
@@ -137,25 +112,6 @@ public class AppActivity extends Activity {
         WiltonJni.wiltoncall("dyload_shared_library", "{\n" +
         "    \"name\": \"" + name + "\",\n" +
         "    \"directory\": \"" + directory.getAbsolutePath() + "\"\n" +
-        "}");
-    }
-
-    private String callWiltonFunc(String engine, String module, String func, String... args) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < args.length; i++) {
-            if (i > 0) {
-                sb.append(", ");
-            }
-            sb.append("\"");
-            sb.append(args[i]);
-            sb.append("\"");
-        }
-        sb.append("]");
-        return WiltonJni.wiltoncall("runscript_" + engine, "{\n" +
-        "    \"module\": \"" + module + "\",\n" +
-        "    \"func\": \"" + func + "\",\n" +
-        "    \"args\": " + sb.toString() + "\n" +
         "}");
     }
 
@@ -187,7 +143,6 @@ public class AppActivity extends Activity {
                 + " ZIP path: [" + stdWlib.getAbsolutePath() + "]");
     }
 
-
     private void logError(Throwable e) {
         try {
             final String msg = Log.getStackTraceString(e);
@@ -197,51 +152,6 @@ public class AppActivity extends Activity {
             showMessage(msg);
         } catch (Exception e1) {
             // give up
-        }
-    }
-
-    private void unpackAssets(File topLevelDir, String path) {
-        try {
-            unpackAssetsDir(topLevelDir, path, path);
-        } catch(IOException e) {
-            logError(e);
-        }
-    }
-
-    private void unpackAssetsDir(File topLevelDir, String relPath, String stripPrefix) throws IOException {
-        String subRelPath = relPath.substring(stripPrefix.length());
-        File destDir = new File(topLevelDir, subRelPath);
-        if (!destDir.exists()) {
-            boolean created = destDir.mkdir();
-            if (!created) {
-                throw new IOException("Cannot create dir: [" + destDir.getAbsolutePath() + "]");
-            }
-        }
-        AssetManager am = getAssets();
-        for (String name : am.list(relPath)) {
-            String childPath = relPath + "/" + name;
-            if (0 == am.list(childPath).length) {
-                unpackAssetFile(topLevelDir, childPath, stripPrefix);
-            } else {
-                unpackAssetsDir(topLevelDir, childPath, stripPrefix);
-            }
-        }
-    }
-
-    private void unpackAssetFile(File topLevelDir, String relPath, String stripPrefix) throws IOException {
-        String subRelPath = relPath.substring(stripPrefix.length());
-        File destFile = new File(topLevelDir, subRelPath);
-        if (destFile.exists()) return;
-        InputStream is = null;
-        OutputStream os = null;
-        try {
-            is = getAssets().open(relPath);
-            os = new FileOutputStream(destFile);
-            copy(is, os);
-            os.close();
-        } finally {
-            closeQuietly(is);
-            closeQuietly(os);
         }
     }
 
@@ -262,4 +172,5 @@ public class AppActivity extends Activity {
             out.write(buffer, 0, read);
         }
     }
+
 }

@@ -29,18 +29,12 @@ import wilton.WiltonJni;
 import wilton.WiltonException;
 import wilton.support.rhino.WiltonRhinoEnvironment;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ScriptableObject;
-
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.nio.charset.Charset;
@@ -114,8 +108,7 @@ public class MainActivity extends Activity {
         File libDir = new File(getFilesDir().getParentFile(), "lib");
         // init wilton
         String conf = "{\n" +
-//                todo: fix process call in launcher
-        "    \"defaultScriptEngine\": \"rhino\",\n" +
+        "    \"defaultScriptEngine\": \"duktape\",\n" +
         "    \"applicationDirectory\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
         "    \"wiltonHome\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
         "    \"android\": {\n" + 
@@ -130,8 +123,6 @@ public class MainActivity extends Activity {
         "        \"nodeIdCompat\": true,\n" +
         "        \"baseUrl\": \"zip://" + filesDir.getAbsolutePath() + "/std.wlib\",\n" +
         "        \"paths\": {\n" +
-        "            \"android\": \"file://" + filesDir.getAbsolutePath() +"/android\",\n" +
-        "            \"launcher\": \"file://" + filesDir.getAbsolutePath() +"/examples/launcher\"\n" +
         "        },\n" +
         "        \"packages\": " + loadPackagesList(new File(filesDir, "std.wlib")) +
         "    \n},\n" +
@@ -150,11 +141,8 @@ public class MainActivity extends Activity {
         String codeReq = WiltonJni.wiltoncall("load_module_resource", prefix + "wilton-requirejs/wilton-require.js");
         WiltonRhinoEnvironment.initialize(codeJni + codeReq);
         WiltonJni.registerScriptGateway(WiltonRhinoEnvironment.gateway(), "rhino");
-
-//        callWiltonFunc("rhino", "android/initUI", "main");
-        callWiltonFunc("duktape", "android/signalChannel", "main");
-        callWiltonFunc("duktape", "launcher/index", "main");
-        callWiltonFunc("rhino", "android/initWebView", "main");
+        WiltonJni.wiltoncall("runscript_duktape", "{\"module\": \"android-launcher/start\"}");
+        WiltonJni.wiltoncall("runscript_rhino", "{\"module\": \"wilton/android/initMain\"}");
     }
 
 
@@ -177,25 +165,6 @@ public class MainActivity extends Activity {
         WiltonJni.wiltoncall("dyload_shared_library", "{\n" +
         "    \"name\": \"" + name + "\",\n" +
         "    \"directory\": \"" + directory.getAbsolutePath() + "\"\n" +
-        "}");
-    }
-
-    private String callWiltonFunc(String engine, String module, String func, String... args) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < args.length; i++) {
-            if (i > 0) {
-                sb.append(", ");
-            }
-            sb.append("\"");
-            sb.append(args[i]);
-            sb.append("\"");
-        }
-        sb.append("]");
-        return WiltonJni.wiltoncall("runscript_" + engine, "{\n" +
-        "    \"module\": \"" + module + "\",\n" +
-        "    \"func\": \"" + func + "\",\n" +
-        "    \"args\": " + sb.toString() + "\n" +
         "}");
     }
 
@@ -226,7 +195,6 @@ public class MainActivity extends Activity {
         throw new WiltonException("Cannot load 'wilton-requirejs/wilton-packages.json' entry,"
                 + " ZIP path: [" + stdWlib.getAbsolutePath() + "]");
     }
-
 
     private void logError(Throwable e) {
         try {
