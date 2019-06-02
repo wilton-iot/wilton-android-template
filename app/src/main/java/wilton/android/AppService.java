@@ -16,15 +16,20 @@
 
 package wilton.android;
 
-import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Intent;
 import android.os.*;
 import android.util.Log;
-import java.io.ByteArrayOutputStream;
 
 import wilton.WiltonJni;
 import wilton.WiltonException;
 
+import wilton.android.R;
+
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -36,13 +41,19 @@ import java.util.Enumeration;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 
-public class AppActivity extends Activity {
+public class AppService extends Service {
 
-    // Activity callbacks
+    // launchMode="singleInstance" is used
+    public static AppService INSTANCE = null;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (null == INSTANCE) {
+            INSTANCE = this;
+        }
+
+        Notification nf = createNotification();
+        startForeground(1, nf);
 
         Executors.newSingleThreadExecutor()
                 .execute(new Runnable() {
@@ -55,6 +66,14 @@ public class AppActivity extends Activity {
                         }
                     }
                 });
+
+        return START_NOT_STICKY;
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        // Used only in case of bound services.
+        return null;
     }
 
     // Application startup logic, runs on rhino-thread
@@ -97,15 +116,21 @@ public class AppActivity extends Activity {
 
     // helper methods
 
-    public void showMessage(final String message) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                new AlertDialog.Builder(AppActivity.this)
-                        .setMessage(message)
-                        .show();
-            }
-        });
+    private Notification createNotification() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra(MainActivity.class.getPackage().getName() + ".notification_icon", true);
+        PendingIntent pi = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        return new Notification.Builder(this)
+                .setAutoCancel(false)
+                .setTicker("Wilton")
+                .setContentTitle("Wilton")
+                .setContentText("Wilton application is running")
+                .setSmallIcon(R.drawable.ic_wilton)
+                .setContentIntent(pi)
+                .setOngoing(true)
+                .setNumber(1)
+                .build();
     }
 
     private void dyloadWiltonModule(File directory, String name) {
@@ -149,7 +174,6 @@ public class AppActivity extends Activity {
             // write to system log
             Log.e(getClass().getPackage().getName(), Log.getStackTraceString(e));
             // show on screen
-            showMessage(msg);
         } catch (Exception e1) {
             // give up
         }
