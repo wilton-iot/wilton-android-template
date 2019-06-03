@@ -20,24 +20,20 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.os.*;
+import android.os.IBinder;
 import android.os.Process;
 import android.util.Log;
+import java.util.concurrent.ThreadFactory;
 
 import wilton.WiltonJni;
-import wilton.WiltonException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.concurrent.Executors;
-import java.nio.charset.Charset;
-import java.util.Enumeration;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipEntry;
+
+import static wilton.android.Common.jsonDyload;
+import static wilton.android.Common.jsonRunscript;
+import static wilton.android.Common.jsonWiltonConfig;
+import static wilton.android.Common.unpackAsset;
 
 public class AppService extends Service {
 
@@ -46,14 +42,14 @@ public class AppService extends Service {
         Notification nf = createNotification();
         startForeground(1, nf);
 
-        Executors.newSingleThreadExecutor()
+        Executors.newSingleThreadExecutor(new AppThreadFactory())
                 .execute(new Runnable() {
                     @Override
                     public void run() {
                         try {
                             startApplication();
                         } catch (Throwable e) {
-                            logError(e);
+                            Log.e(getClass().getPackage().getName(), Log.getStackTraceString(e));
                         }
                     }
                 });
@@ -70,46 +66,27 @@ public class AppService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        // Used only in case of bound services.
         return null;
     }
 
-    // Application startup logic, runs on rhino-thread
+    // Application startup logic, runs on separate thread
 
     private void startApplication() {
+        // dirs
         File filesDir = getExternalFilesDir(null);
         File libDir = new File(getFilesDir().getParentFile(), "lib");
-        // init wilton
-        String conf = "{\n" +
-        "    \"defaultScriptEngine\": \"duktape\",\n" +
-        "    \"applicationDirectory\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
-        "    \"wiltonHome\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
-        "    \"android\": {\n" + 
-        "         \"nativeLibsDir\": \"" + libDir.getAbsolutePath() + "\"\n" +
-        "    },\n" +
-        "    \"environmentVariables\": {\n" + 
-        "         \"ANDROID\": true\n" +
-        "    },\n" +
-        "    \"requireJs\": {\n" +
-        "        \"waitSeconds\": 0,\n" +
-        "        \"enforceDefine\": true,\n" +
-        "        \"nodeIdCompat\": true,\n" +
-        "        \"baseUrl\": \"zip://" + filesDir.getAbsolutePath() + "/std.wlib\",\n" +
-        "        \"paths\": {\n" +
-        "            \"vueapp\": \"file://" + filesDir.getAbsolutePath() +"/app\"\n" +
-        "        },\n" +
-        "        \"packages\": " + loadPackagesList(new File(filesDir, "std.wlib")) +
-        "    \n},\n" +
-        "    \"compileTimeOS\": \"android\"\n" +
-        "}\n";
-        WiltonJni.initialize(conf);
+
+        // init
+        unpackAsset(this, filesDir, "std.wlib");
+        String wconf = jsonWiltonConfig(filesDir, libDir);
+        WiltonJni.initialize(wconf);
 
         // modules
-        dyloadWiltonModule(libDir, "wilton_logging");
-        dyloadWiltonModule(libDir, "wilton_loader");
-        dyloadWiltonModule(libDir, "wilton_duktape");
+        WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_logging"));
+        WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_loader"));
+        WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_duktape"));
 
-        WiltonJni.wiltoncall("runscript_duktape", "{\"module\": \"wilton/android/initApp\"}");
+        WiltonJni.wiltoncall("runscript_duktape", jsonRunscript("wilton/android/initApp", ""));
     }
 
     // helper methods
@@ -117,7 +94,6 @@ public class AppService extends Service {
     private Notification createNotification() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra(MainActivity.class.getPackage().getName() + ".notification_icon", true);
         PendingIntent pi = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         return new Notification.Builder(this)
                 .setAutoCancel(false)
@@ -131,67 +107,10 @@ public class AppService extends Service {
                 .build();
     }
 
-    private void dyloadWiltonModule(File directory, String name) {
-        WiltonJni.wiltoncall("dyload_shared_library", "{\n" +
-        "    \"name\": \"" + name + "\",\n" +
-        "    \"directory\": \"" + directory.getAbsolutePath() + "\"\n" +
-        "}");
-    }
-
-    private String loadPackagesList(File stdWlib) {
-        ZipFile zipFile = null;
-        try {
-            zipFile = new ZipFile(stdWlib);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        while (entries.hasMoreElements()) {
-            ZipEntry en = entries.nextElement();
-            if ("wilton-requirejs/wilton-packages.json".equals(en.getName())) {
-                InputStream is = null;
-                try {
-                    is = zipFile.getInputStream(en);
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    copy(is, os);
-                    return new String(os.toByteArray(), Charset.forName("UTF-8"));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                } finally {
-                    closeQuietly(is);
-                }
-            }
-        }
-        throw new WiltonException("Cannot load 'wilton-requirejs/wilton-packages.json' entry,"
-                + " ZIP path: [" + stdWlib.getAbsolutePath() + "]");
-    }
-
-    private void logError(Throwable e) {
-        try {
-            final String msg = Log.getStackTraceString(e);
-            // write to system log
-            Log.e(getClass().getPackage().getName(), Log.getStackTraceString(e));
-            // show on screen
-        } catch (Exception e1) {
-            // give up
-        }
-    }
-
-    private static void closeQuietly(Closeable closeable) {
-        if (null != closeable) {
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                // ignore
-            }
-        }
-    }
-
-    private static void copy(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[4096];
-        int read;
-        while ((read = in.read(buffer)) != -1) {
-            out.write(buffer, 0, read);
+    private static class AppThreadFactory implements ThreadFactory {
+        @Override
+        public Thread newThread(Runnable r) {
+            return new Thread(new ThreadGroup("app"), r, "app-thread");
         }
     }
 
