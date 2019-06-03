@@ -16,18 +16,16 @@
 
 package wilton.android;
 
-import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.*;
+import android.os.Process;
 import android.util.Log;
 
 import wilton.WiltonJni;
 import wilton.WiltonException;
-
-import wilton.android.R;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -43,15 +41,8 @@ import java.util.zip.ZipEntry;
 
 public class AppService extends Service {
 
-    // launchMode="singleInstance" is used
-    public static AppService INSTANCE = null;
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (null == INSTANCE) {
-            INSTANCE = this;
-        }
-
         Notification nf = createNotification();
         startForeground(1, nf);
 
@@ -68,6 +59,13 @@ public class AppService extends Service {
                 });
 
         return START_NOT_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        stopForeground(true);
+        Process.killProcess(Process.myPid());
     }
 
     @Override

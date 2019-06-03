@@ -27,14 +27,17 @@
         android:minSdkVersion="28"/>
 
     <application
-        android:allowBackup="true"
         android:icon="@drawable/ic_wilton"
         android:label="Wilton"
-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        android:largeHeap="true"
+        android:persistent="true"
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize"
-            android:launchMode="singleInstance">
+            android:launchMode="singleInstance"
+            android:process="wilton.android.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -42,11 +45,9 @@
         </activity>
         <service
             android:name=".AppService"
-            android:launchMode="singleInstance"
             android:process="wilton.android.AppService">
         </service>
         <receiver
-            android:enabled="true"
             android:name=".BootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -21,6 +21,7 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.*;
+import android.os.Process;
 import android.util.Log;
 import android.webkit.WebView;
 import java.io.ByteArrayOutputStream;
@@ -68,6 +69,14 @@ public class MainActivity extends Activity {
                         }
                     }
                 });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Intent intent = new Intent(this, AppService.class);
+        stopService(intent);
+        Process.killProcess(Process.myPid());
     }
 
     @Override
