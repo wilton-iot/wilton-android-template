@@ -20,6 +20,7 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Process;
 import android.util.Log;
@@ -42,12 +43,13 @@ public class AppService extends Service {
         Notification nf = createNotification();
         startForeground(1, nf);
 
+        final Bundle bundle = intent.getExtras();
         Executors.newSingleThreadExecutor(new AppThreadFactory())
                 .execute(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            startApplication();
+                            startApplication(bundle);
                         } catch (Throwable e) {
                             Log.e(getClass().getPackage().getName(), Log.getStackTraceString(e));
                         }
@@ -71,14 +73,19 @@ public class AppService extends Service {
 
     // Application startup logic, runs on separate thread
 
-    private void startApplication() {
+    private void startApplication(Bundle bundle) {
+        // options
+        String rootModuleName = bundle.getString("wilton_rootModuleName");
+        String repoPath = bundle.getString("wilton_repoPath");
+        String startupModule = bundle.getString("wilton_startupModule");
+
         // dirs
         File filesDir = getExternalFilesDir(null);
         File libDir = new File(getFilesDir().getParentFile(), "lib");
 
         // init
         unpackAsset(this, filesDir, "std.wlib");
-        String wconf = jsonWiltonConfig(filesDir, libDir);
+        String wconf = jsonWiltonConfig(filesDir, libDir, rootModuleName, repoPath);
         WiltonJni.initialize(wconf);
 
         // modules
@@ -86,7 +93,7 @@ public class AppService extends Service {
         WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_loader"));
         WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_duktape"));
 
-        WiltonJni.wiltoncall("runscript_duktape", jsonRunscript("wilton/android/initApp", ""));
+        WiltonJni.wiltoncall("runscript_duktape", jsonRunscript("wilton/android/initApp", "", startupModule));
     }
 
     // helper methods

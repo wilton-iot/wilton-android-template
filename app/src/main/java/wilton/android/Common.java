@@ -41,9 +41,19 @@ public class Common {
     }
 
     public static String jsonWiltonConfig(File filesDir, File libDir) {
+        return jsonWiltonConfig(filesDir, libDir, "", "");
+    }
+
+    public static String jsonWiltonConfig(File filesDir, File libDir, String rootModuleName,
+            String rootModulePath) {
         File stdlib = new File(filesDir, "std.wlib");
         String entry = "wilton-requirejs/wilton-packages.json";
         String packages = readZipEntryToString(stdlib, entry);
+        String appPath = "";
+        if (!rootModulePath.isEmpty()) {
+            appPath = 
+        "            \"" + rootModuleName + "\": \"file://" + rootModulePath + "\"\n";
+        }
         return
         "{\n" +
         "    \"defaultScriptEngine\": \"duktape\",\n" +
@@ -61,8 +71,7 @@ public class Common {
         "        \"nodeIdCompat\": true,\n" +
         "        \"baseUrl\": \"zip://" + filesDir.getAbsolutePath() + "/std.wlib\",\n" +
         "        \"paths\": {\n" +
-//                todo: removeme
-        "            \"vueapp\": \"file://" + filesDir.getAbsolutePath() + "/app\"\n" +
+                    appPath +
         "        },\n" +
         "        \"packages\": " + packages +
         "    \n},\n" +

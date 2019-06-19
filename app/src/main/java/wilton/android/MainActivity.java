@@ -97,10 +97,6 @@ public class MainActivity extends Activity {
 
         // init
         unpackAsset(this, filesDir, "std.wlib");
-        // todo: removeme
-        unpackAsset(this, filesDir, "id_rsa");
-        unpackAsset(this, filesDir, "id_rsa.pub");
-        // end: removeme
         String wconf = jsonWiltonConfig(filesDir, libDir);
         WiltonJni.initialize(wconf);
 
