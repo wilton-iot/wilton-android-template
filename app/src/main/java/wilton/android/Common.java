@@ -40,12 +40,13 @@ public class Common {
         "}";
     }
 
-    public static String jsonWiltonConfig(File filesDir, File libDir) {
-        return jsonWiltonConfig(filesDir, libDir, "", "");
+    public static String jsonWiltonConfig(File filesDir, File libDir, String rootModuleName,
+            String rootModulePath) {
+        return jsonWiltonConfig(filesDir, libDir, rootModuleName, rootModulePath, "");
     }
 
     public static String jsonWiltonConfig(File filesDir, File libDir, String rootModuleName,
-            String rootModulePath) {
+            String rootModulePath, String runOnRhinoUrl) {
         File stdlib = new File(filesDir, "std.wlib");
         String entry = "wilton-requirejs/wilton-packages.json";
         String packages = readZipEntryToString(stdlib, entry);
@@ -54,12 +55,18 @@ public class Common {
             appPath = 
         "            \"" + rootModuleName + "\": \"file://" + rootModulePath + "\"\n";
         }
+        String aopt = "";
+        if (!runOnRhinoUrl.isEmpty()) {
+            aopt =
+        "         \"runOnRhinoUrl\": \"" + runOnRhinoUrl + "\",\n";
+        }
         return
         "{\n" +
         "    \"defaultScriptEngine\": \"duktape\",\n" +
         "    \"applicationDirectory\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
         "    \"wiltonHome\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
-        "    \"android\": {\n" + 
+        "    \"android\": {\n" +
+                    aopt +
         "         \"nativeLibsDir\": \"" + libDir.getAbsolutePath() + "\"\n" +
         "    },\n" +
         "    \"environmentVariables\": {\n" + 

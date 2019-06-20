@@ -79,12 +79,14 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        /* no-op
         WebView wv = findViewById(R.id.activity_main_webview);
         if (wv.canGoBack()) {
             wv.goBack();
         } else {
             super.onBackPressed();
         }
+        */
     }
 
 
@@ -97,7 +99,7 @@ public class MainActivity extends Activity {
 
         // init
         unpackAsset(this, filesDir, "std.wlib");
-        String wconf = jsonWiltonConfig(filesDir, libDir);
+        String wconf = jsonWiltonConfig(filesDir, libDir, "apps", filesDir.getAbsolutePath() + "/apps");
         WiltonJni.initialize(wconf);
 
         // modules

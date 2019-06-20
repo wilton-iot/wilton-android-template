@@ -78,6 +78,7 @@ public class AppService extends Service {
         String rootModuleName = bundle.getString("wilton_rootModuleName");
         String repoPath = bundle.getString("wilton_repoPath");
         String startupModule = bundle.getString("wilton_startupModule");
+        String runOnRhinoUrl = bundle.getString("wilton_runOnRhinoUrl");
 
         // dirs
         File filesDir = getExternalFilesDir(null);
@@ -85,7 +86,7 @@ public class AppService extends Service {
 
         // init
         unpackAsset(this, filesDir, "std.wlib");
-        String wconf = jsonWiltonConfig(filesDir, libDir, rootModuleName, repoPath);
+        String wconf = jsonWiltonConfig(filesDir, libDir, rootModuleName, repoPath, runOnRhinoUrl);
         WiltonJni.initialize(wconf);
 
         // modules
