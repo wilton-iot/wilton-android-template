@@ -85,7 +85,6 @@ public class AppService extends Service {
         File libDir = new File(getFilesDir().getParentFile(), "lib");
 
         // init
-        unpackAsset(this, filesDir, "std.wlib");
         String wconf = jsonWiltonConfig(filesDir, libDir, rootModuleName, repoPath, runOnRhinoUrl);
         WiltonJni.initialize(wconf);
 

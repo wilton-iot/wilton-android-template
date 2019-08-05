@@ -16,90 +16,81 @@
 
 package wilton.android;
 
-import android.app.Activity;
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Process;
 import android.util.Log;
-import android.webkit.WebView;
+import java.util.concurrent.ThreadFactory;
 
 import wilton.WiltonJni;
 import wilton.support.rhino.WiltonRhinoEnvironment;
 
 import java.io.File;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import static wilton.android.Common.jsonDyload;
 import static wilton.android.Common.jsonRunscript;
 import static wilton.android.Common.jsonWiltonConfig;
 import static wilton.android.Common.unpackAsset;
 
-public class MainActivity extends Activity {
+public class DeviceService extends Service {
 
-    // launchMode="singleInstance" is used
-    public static MainActivity INSTANCE = null;
-
-    // Activity callbacks
+    public static DeviceService INSTANCE = null;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public int onStartCommand(Intent intent, int flags, int startId) {
         if (null == INSTANCE) {
             INSTANCE = this;
         }
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        Notification nf = createNotification();
+        startForeground(2, nf);
 
-        Executors.newSingleThreadExecutor(new DeepThreadFactory())
+        final Bundle bundle = intent.getExtras();
+        Executors.newSingleThreadExecutor(new AppThreadFactory())
                 .execute(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            startApplication();
+                            startApplication(bundle);
                         } catch (Throwable e) {
                             Log.e(getClass().getPackage().getName(), Log.getStackTraceString(e));
                         }
                     }
                 });
+
+        return START_NOT_STICKY;
     }
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
-        stopService(new Intent(this, AppService.class));
-        stopService(new Intent(this, DeviceService.class));
+        stopForeground(true);
         Process.killProcess(Process.myPid());
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        // hideBottomBar();
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 
-    @Override
-    public void onBackPressed() {
-        /* no-op
-        WebView wv = findViewById(R.id.activity_main_webview);
-        if (wv.canGoBack()) {
-            wv.goBack();
-        } else {
-            super.onBackPressed();
-        }
-        */
-    }
+    // Application startup logic, runs on separate thread
 
+    private void startApplication(Bundle bundle) {
+        // options
+        String rootModuleName = bundle.getString("wilton_rootModuleName");
+        String repoPath = bundle.getString("wilton_repoPath");
+        String startupModule = bundle.getString("wilton_startupModule");
 
-    // Application startup logic, runs on rhino-thread
-
-    private void startApplication() {
         // dirs
         File filesDir = getExternalFilesDir(null);
         File libDir = new File(getFilesDir().getParentFile(), "lib");
 
         // init
-        unpackAsset(this, filesDir, "std.wlib");
-        String wconf = jsonWiltonConfig(filesDir, libDir, "apps", filesDir.getAbsolutePath() + "/apps");
+        String wconf = jsonWiltonConfig(filesDir, libDir, rootModuleName, repoPath);
         WiltonJni.initialize(wconf);
 
         // modules
@@ -114,15 +105,35 @@ public class MainActivity extends Activity {
         WiltonRhinoEnvironment.initialize(codeJni + codeReq);
         WiltonJni.registerScriptGateway(WiltonRhinoEnvironment.gateway(), "rhino");
 
-        // startup
-        WiltonJni.wiltoncall("runscript_duktape", jsonRunscript("android-launcher/start", ""));
-        WiltonJni.wiltoncall("runscript_rhino", jsonRunscript("wilton/android/initMain", ""));
+        WiltonJni.wiltoncall("runscript_rhino", jsonRunscript("wilton/android/initApp", "", startupModule));
+
+        // destroy process
+        stopService(new Intent(this, DeviceService.class));
     }
 
-    private static class DeepThreadFactory implements ThreadFactory {
+    // helper methods
+
+    private Notification createNotification() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pi = PendingIntent.getActivity(this, 2, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        return new Notification.Builder(this)
+                .setAutoCancel(false)
+                .setTicker("Wilton device")
+                .setContentTitle("Wilton device")
+                .setContentText("Wilton device is running")
+                .setSmallIcon(R.drawable.ic_wilton)
+                .setContentIntent(pi)
+                .setOngoing(true)
+                .setNumber(2)
+                .build();
+    }
+
+    private static class AppThreadFactory implements ThreadFactory {
         @Override
         public Thread newThread(Runnable r) {
-            return new Thread(new ThreadGroup("rhino"), r, "rhino-thread", 1024 * 1024 * 16);
+            return new Thread(new ThreadGroup("device"), r, "device-thread", 1024 * 1024 * 16);
         }
     }
+
 }
