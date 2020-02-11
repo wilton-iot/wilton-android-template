@@ -63,7 +63,6 @@ public class Common {
         return
         "{\n" +
         "    \"defaultScriptEngine\": \"duktape\",\n" +
-        "    \"applicationDirectory\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
         "    \"wiltonHome\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
         // todo: wiltonVersion
         "    \"android\": {\n" +
