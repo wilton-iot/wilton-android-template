@@ -99,23 +99,24 @@ public class MainActivity extends Activity {
 
         // init
         unpackAsset(this, filesDir, "std.wlib");
+        unpackAsset(this, filesDir, "std.min.wlib");
         String wconf = jsonWiltonConfig(filesDir, libDir, "apps", filesDir.getAbsolutePath() + "/apps");
         WiltonJni.initialize(wconf);
 
         // modules
         WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_logging"));
         WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_loader"));
-        WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_duktape"));
+        WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_quickjs"));
 
         // rhino
         String prefix = "zip://" + filesDir.getAbsolutePath() + "/std.wlib/";
-        String codeJni = WiltonJni.wiltoncall("load_module_resource", prefix + "wilton-requirejs/wilton-jni.js");
-        String codeReq = WiltonJni.wiltoncall("load_module_resource", prefix + "wilton-requirejs/wilton-require.js");
+        String codeJni = WiltonJni.wiltoncall("load_module_resource", "{ \"url\": \"" + prefix + "wilton-requirejs/wilton-jni.js\" }");
+        String codeReq = WiltonJni.wiltoncall("load_module_resource", "{ \"url\": \"" + prefix + "wilton-requirejs/wilton-require.js\" }");
         WiltonRhinoEnvironment.initialize(codeJni + codeReq);
         WiltonJni.registerScriptGateway(WiltonRhinoEnvironment.gateway(), "rhino");
 
         // startup
-        WiltonJni.wiltoncall("runscript_duktape", jsonRunscript("android-launcher/start", ""));
+        WiltonJni.wiltoncall("runscript_quickjs", jsonRunscript("android-launcher/start", ""));
         WiltonJni.wiltoncall("runscript_rhino", jsonRunscript("wilton/android/initMain", ""));
     }
 

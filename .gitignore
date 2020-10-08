@@ -6,5 +6,5 @@
 /build
 /app/build
 /captures
-/app/src/main/assets/std.wlib
+/app/src/main/assets/*.wlib
 /app/src/main/assets/id*

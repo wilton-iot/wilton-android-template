@@ -96,7 +96,7 @@ public class DeviceService extends Service {
         // modules
         WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_logging"));
         WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_loader"));
-        WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_duktape"));
+        WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_quickjs"));
 
         // rhino
         String prefix = "zip://" + filesDir.getAbsolutePath() + "/std.wlib/";

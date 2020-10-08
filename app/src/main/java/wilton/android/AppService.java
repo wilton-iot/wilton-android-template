@@ -91,9 +91,9 @@ public class AppService extends Service {
         // modules
         WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_logging"));
         WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_loader"));
-        WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_duktape"));
+        WiltonJni.wiltoncall("dyload_shared_library", jsonDyload(libDir, "wilton_quickjs"));
 
-        WiltonJni.wiltoncall("runscript_duktape", jsonRunscript("wilton/android/initApp", "", startupModule));
+        WiltonJni.wiltoncall("runscript_quickjs", jsonRunscript("wilton/android/initApp", "", startupModule));
     }
 
     // helper methods
