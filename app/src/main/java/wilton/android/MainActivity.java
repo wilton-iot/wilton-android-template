@@ -99,7 +99,6 @@ public class MainActivity extends Activity {
 
         // init
         unpackAsset(this, filesDir, "std.wlib");
-        unpackAsset(this, filesDir, "std.min.wlib");
         String wconf = jsonWiltonConfig(filesDir, libDir, "apps", filesDir.getAbsolutePath() + "/apps");
         WiltonJni.initialize(wconf);
 
