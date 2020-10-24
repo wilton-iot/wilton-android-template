@@ -8,3 +8,5 @@
 /captures
 /app/src/main/assets/*.wlib
 /app/src/main/assets/id*
+/vendor/vendor.jar
+/vendor/VendorEmpty.class
