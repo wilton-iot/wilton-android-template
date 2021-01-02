@@ -40,20 +40,20 @@ public class Common {
         "}";
     }
 
-    public static String jsonWiltonConfig(File filesDir, File libDir, String rootModuleName,
-            String rootModulePath) {
-        return jsonWiltonConfig(filesDir, libDir, rootModuleName, rootModulePath, "");
+    public static String jsonWiltonConfig(String defaultScriptEngine, File filesDir, File libDir,
+            String rootModuleName, String rootModulePath) {
+        return jsonWiltonConfig(defaultScriptEngine, filesDir, libDir, rootModuleName, rootModulePath, "");
     }
 
-    public static String jsonWiltonConfig(File filesDir, File libDir, String rootModuleName,
-            String rootModulePath, String runOnRhinoUrl) {
+    public static String jsonWiltonConfig(String defaultScriptEngine, File filesDir, File libDir,
+            String rootModuleName, String rootModulePath, String runOnRhinoUrl) {
         File stdlib = new File(filesDir, "std.wlib");
         String entry = "wilton-requirejs/wilton-packages.json";
         String packages = readZipEntryToString(stdlib, entry);
         String appPath = "";
         if (!rootModulePath.isEmpty()) {
             appPath = 
-        "            \"" + rootModuleName + "\": \"file://" + rootModulePath + "\"\n";
+        "            \"" + rootModuleName + "\": \"file://" + rootModulePath + "\"";
         }
         String aopt = "";
         if (!runOnRhinoUrl.isEmpty()) {
@@ -62,7 +62,7 @@ public class Common {
         }
         return
         "{\n" +
-        "    \"defaultScriptEngine\": \"quickjs\",\n" +
+        "    \"defaultScriptEngine\": \"" + defaultScriptEngine + "\",\n" +
         "    \"wiltonHome\": \"" + filesDir.getAbsolutePath() + "/\",\n" +
         // todo: wiltonVersion
         "    \"android\": {\n" +
@@ -78,7 +78,7 @@ public class Common {
         "        \"nodeIdCompat\": true,\n" +
         "        \"baseUrl\": \"zip://" + filesDir.getAbsolutePath() + "/std.wlib\",\n" +
         "        \"paths\": {\n" +
-                    appPath +
+                    appPath + collectLibPaths(filesDir) +
         "        },\n" +
         "        \"packages\": " + packages +
         "    \n},\n" +
@@ -132,5 +132,18 @@ public class Common {
         }
     }
 
+    private static String collectLibPaths(File filesDir) {
+        File libsDir = new File(filesDir, "libs");
+        StringBuilder sb = new StringBuilder();
+        if (libsDir.exists()) {
+            String[] libs = libsDir.list();
+            for (String lib : libs) {
+                sb.append(",\n");
+                sb.append("            \"" + lib + "\": \"file://" + new File(libsDir, lib).getAbsolutePath() + "\"");
+            }
+        }
+        sb.append("\n");
+        return sb.toString();
+    }
 
 }

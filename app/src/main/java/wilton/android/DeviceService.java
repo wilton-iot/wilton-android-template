@@ -30,6 +30,7 @@ import wilton.WiltonJni;
 import wilton.support.rhino.WiltonRhinoEnvironment;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.concurrent.Executors;
 
 import static wilton.android.Common.jsonDyload;
@@ -82,15 +83,26 @@ public class DeviceService extends Service {
     private void startApplication(Bundle bundle) {
         // options
         String rootModuleName = bundle.getString("wilton_rootModuleName");
-        String repoPath = bundle.getString("wilton_repoPath");
-        String startupModule = bundle.getString("wilton_startupModule");
+        String application = bundle.getString("wilton_application");
+        ArrayList<String> initArgs = new ArrayList<String>();
+        initArgs.add(bundle.getString("wilton_startupModule"));
+        for (int i = 0; true; i++) {
+            String sa = bundle.getString("wilton_startupArg" + i);
+            if (null == sa) {
+                break;
+            } else {
+                initArgs.add(sa);
+            }
+        }
 
         // dirs
         File filesDir = getExternalFilesDir(null);
         File libDir = new File(getFilesDir().getParentFile(), "lib");
+        String rootModulePath = new File(filesDir, "apps/" + application).getAbsolutePath();
 
         // init
-        String wconf = jsonWiltonConfig(filesDir, libDir, rootModuleName, repoPath);
+        String wconf = jsonWiltonConfig("rhino", filesDir, libDir, rootModuleName, rootModulePath);
+        Log.i(getClass().getPackage().getName(), wconf);
         WiltonJni.initialize(wconf);
 
         // modules
@@ -100,12 +112,14 @@ public class DeviceService extends Service {
 
         // rhino
         String prefix = "zip://" + filesDir.getAbsolutePath() + "/std.wlib/";
-        String codeJni = WiltonJni.wiltoncall("load_module_resource", prefix + "wilton-requirejs/wilton-jni.js");
-        String codeReq = WiltonJni.wiltoncall("load_module_resource", prefix + "wilton-requirejs/wilton-require.js");
+        String codeJni = WiltonJni.wiltoncall("load_module_resource", "{ \"url\": \"" + prefix + "wilton-requirejs/wilton-jni.js\" }");
+        String codeReq = WiltonJni.wiltoncall("load_module_resource", "{ \"url\": \"" + prefix + "wilton-requirejs/wilton-require.js\" }");
         WiltonRhinoEnvironment.initialize(codeJni + codeReq);
         WiltonJni.registerScriptGateway(WiltonRhinoEnvironment.gateway(), "rhino");
 
-        WiltonJni.wiltoncall("runscript_rhino", jsonRunscript("wilton/android/initApp", "", startupModule));
+        String rsj = jsonRunscript("wilton/android/initApp", "", initArgs.toArray(new String[0]));
+        Log.i(getClass().getPackage().getName(), rsj);
+        WiltonJni.wiltoncall("runscript_rhino", rsj);
 
         // destroy process
         stopService(new Intent(this, DeviceService.class));

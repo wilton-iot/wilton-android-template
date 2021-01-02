@@ -99,7 +99,8 @@ public class MainActivity extends Activity {
 
         // init
         unpackAsset(this, filesDir, "std.wlib");
-        String wconf = jsonWiltonConfig(filesDir, libDir, "apps", filesDir.getAbsolutePath() + "/apps");
+        String wconf = jsonWiltonConfig("quickjs", filesDir, libDir, "apps", filesDir.getAbsolutePath() + "/apps");
+        Log.i(getClass().getPackage().getName(), wconf);
         WiltonJni.initialize(wconf);
 
         // modules
